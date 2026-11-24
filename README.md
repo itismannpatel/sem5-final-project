@@ -3,7 +3,7 @@
 **A peer-to-peer skill exchange for students.** Teach what you know, learn what you don't —
 a fair two-way swap, no money involved.
 
-Built for **Topic #03 · Peer-to-Peer Skill Exchange**: a marketplace-style web app connecting
+Built for a marketplace-style web app connecting
 students who can teach a skill with students who want to learn it, with matching, chat,
 scheduling, calendar sync, reviews and a sandbox premium tier.
 
@@ -301,7 +301,7 @@ deletion, and a single-writer SQLite database meant for one process. Every read 
 
 ## Team
 
-Built by **Team TV26-COD-8031** for the Sem 5 integrated assignment. Roles reflect primary
+Built by  Team for the Sem 5 integrated assignment. Roles reflect primary
 ownership; every feature was reviewed by at least one other member (see
 `docs/business/BUSINESS_DOCS_GUIDE.md` §6.18 for the contribution matrix).
 
