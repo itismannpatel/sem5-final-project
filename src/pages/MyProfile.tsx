@@ -71,7 +71,7 @@ function SkillEditor({ title, hint, tone, value, onChange, defaultLevel }: Skill
                 padding: '7px 8px 7px 12px',
                 borderRadius: 12,
                 border: '1px solid var(--line)',
-                background: 'rgba(255,255,255,0.025)',
+                background: 'var(--fill-1)',
               }}
             >
               <span className="grow" style={{ fontSize: '0.85rem' }}>
@@ -221,10 +221,7 @@ export function MyProfile() {
   return (
     <>
       <header className="page-head">
-        <div>
-          <h1 className="page-title">My profile</h1>
-          <p>Two lists, one identity. What you can teach is what someone else is searching for.</p>
-        </div>
+        <p>Two lists, one identity. What you can teach is what someone else is searching for.</p>
         <div className="row gap-8">
           <Link to={`/u/${me.id}`} className="btn btn-outline btn-sm">
             <Icon name="eye" size={15} />
@@ -414,12 +411,17 @@ export function MyProfile() {
 
           <div className="card card-glow">
             <div className="row gap-8" style={{ marginBottom: 8 }}>
-              <Icon name="sparkles" size={16} />
-              <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>Add at least one of each</span>
+              <Icon name={teaches.length > 0 && wants.length > 0 ? 'checkCircle' : 'sparkles'} size={16} />
+              <span style={{ fontSize: '0.85rem', fontWeight: 600 }}>
+                {teaches.length > 0 && wants.length > 0
+                  ? 'Two-way swaps unlocked'
+                  : 'Add at least one of each'}
+              </span>
             </div>
             <p className="faint" style={{ fontSize: '0.8rem', lineHeight: 1.55 }}>
-              With both lists populated, the engine can find two-way swaps — where you both teach and
-              both learn.
+              {teaches.length > 0 && wants.length > 0
+                ? 'Both sides are live — everyone who teaches what you want, and wants what you teach, now ranks as a two-way match.'
+                : 'With both lists populated, the engine can find two-way swaps — where you both teach and both learn.'}
             </p>
           </div>
         </aside>

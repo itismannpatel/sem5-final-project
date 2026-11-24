@@ -9,6 +9,7 @@ import { MatchRing } from '../components/MatchRing'
 import { RatingStars } from '../components/Rating'
 import { SkillChip } from '../components/SkillChip'
 import { RequestSessionModal } from '../components/RequestSessionModal'
+import { ProPanel } from '../components/ProPanel'
 import { EmptyState } from '../components/EmptyState'
 import { Icon } from '../components/icons'
 
@@ -57,14 +58,14 @@ export function Profile() {
           <div className="profile-head">
             <Avatar user={person} size="2xl" ring />
             <div className="profile-head-main">
-              <h1 className="profile-name">
+              <h2 className="profile-name">
                 {person.name}
                 {person.verified && (
                   <span className="verified-dot" title="Verified student">
                     <Icon name="shield" size={18} />
                   </span>
                 )}
-              </h1>
+              </h2>
               <div className="profile-meta">
                 <span>{person.branch}</span>
                 <span className="dot-sep" />
@@ -187,7 +188,8 @@ export function Profile() {
                             {timeAgo(review.createdAt)}
                           </div>
                         </div>
-                        <RatingStars value={review.rating} count={0} size={12} showCount={false} />
+                        {/* one review, so show the score but never a count */}
+                        <RatingStars value={review.rating} count={1} size={12} showCount={false} />
                       </div>
                       <p className="review-text">{review.text}</p>
                     </article>
@@ -288,6 +290,8 @@ export function Profile() {
               </div>
             </div>
           </div>
+
+          {isMe && <ProPanel user={person} />}
         </aside>
       </div>
 

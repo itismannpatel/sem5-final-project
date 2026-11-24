@@ -2,6 +2,7 @@ import { useMemo } from 'react'
 import { Link } from 'react-router-dom'
 import { useApp, useCurrentUser } from '../context/AppContext'
 import { computeMatches, MATCH_WEIGHTS } from '../lib/matching'
+import { useServerMatches } from '../data/useMatches'
 import { MatchCard } from '../components/MatchCard'
 import { EmptyState } from '../components/EmptyState'
 import { Icon } from '../components/icons'
@@ -10,7 +11,10 @@ export function Matches() {
   const { db } = useApp()
   const me = useCurrentUser()
 
-  const matches = useMemo(() => computeMatches(me, db), [me, db])
+  // The backend engine is authoritative; the local engine paints the first frame
+  // (and keeps working if the API is unreachable).
+  const localMatches = useMemo(() => computeMatches(me, db), [me, db])
+  const matches = useServerMatches(me.id, 'one', db.version) ?? localMatches
   const twoWay = matches.filter((match) => match.reciprocal)
   const oneWay = matches.filter((match) => !match.reciprocal)
   const best = matches[0]
@@ -18,13 +22,10 @@ export function Matches() {
   return (
     <>
       <header className="page-head">
-        <div>
-          <h1 className="page-title">Your matches</h1>
-          <p>
-            Ranked by how much you both gain. A two-way swap means there is something in it for each
-            of you — those come first.
-          </p>
-        </div>
+        <p>
+          Ranked by how much you both gain. A two-way swap means there is something in it for each
+          of you — those come first.
+        </p>
         <Link to="/discover" className="btn btn-ghost btn-sm">
           <Icon name="compass" size={15} />
           Browse everyone

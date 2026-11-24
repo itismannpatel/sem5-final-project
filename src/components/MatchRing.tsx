@@ -15,7 +15,7 @@ export function MatchRing({ score, size = 54, stroke = 3.5, caption = 'match' }:
   const clamped = Math.max(0, Math.min(100, score))
   const offset = circumference * (1 - clamped / 100)
 
-  const [from, to] = clamped >= 75 ? ['#ffa268', '#f2653f'] : clamped >= 50 ? ['#f7d08a', '#d9a54a'] : ['#8a8399', '#5c5668']
+  const [from, to] = clamped >= 75 ? ['#7c6ff5', '#5b4fe8'] : clamped >= 50 ? ['#f0b429', '#d98a08'] : ['#b0acb8', '#8b8794']
 
   return (
     <div className="match-ring" style={{ width: size, height: size }}>
@@ -31,7 +31,7 @@ export function MatchRing({ score, size = 54, stroke = 3.5, caption = 'match' }:
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="rgba(255,255,255,0.09)"
+          stroke="rgba(28,27,34,0.1)"
           strokeWidth={stroke}
         />
         <circle

@@ -1,69 +1,110 @@
 /* ==========================================================================
    Twofold — design tokens
-   A warm-on-ink palette: ember for what you teach, mint for what you learn.
+   Light theme: warm-white canvas, deep violet primary, soft lavender
+   secondary, emerald for "learn"/success, coral used only as a highlight.
+   Semantic names (--bg, --surface, --text…) are the ones to reach for;
+   the legacy names (--ink-*, --ember… ) are aliases kept so existing
+   component CSS resolves without a flag-day rewrite.
    ========================================================================== */
 
 :root {
-  color-scheme: dark;
+  color-scheme: light;
 
-  /* Surfaces */
-  --ink-0: #07060a;
-  --ink-1: #0b0a11;
-  --ink-2: #121019;
-  --ink-3: #191723;
-  --line: rgba(255, 255, 255, 0.075);
-  --line-strong: rgba(255, 255, 255, 0.135);
+  /* ---- Brand: deep violet / indigo ---- */
+  --brand: #5b4fe8;
+  --brand-strong: #4a3fd4;
+  --brand-deep: #3f35b8;
+  --brand-bright: #7c6ff5;
+  --brand-soft: rgba(91, 79, 232, 0.08);
+  --brand-soft-2: rgba(91, 79, 232, 0.14);
+  --brand-line: rgba(91, 79, 232, 0.24);
+  --on-brand: #ffffff;
 
-  /* Text */
-  --text: #f7f4f0;
-  --text-2: #b3adbd;
-  --text-3: #7b7587;
-  --text-4: #55505f;
+  /* ---- Secondary: soft lavender ---- */
+  --lavender: #8b83f6;
+  --lavender-soft: rgba(139, 131, 246, 0.16);
+  --lavender-line: rgba(139, 131, 246, 0.32);
 
-  /* Accents */
-  --ember: #ff8a4c;
-  --ember-bright: #ffa268;
-  --ember-deep: #f2653f;
-  --ember-soft: rgba(255, 138, 76, 0.12);
-  --ember-line: rgba(255, 138, 76, 0.28);
+  /* ---- Surfaces: warm white ---- */
+  --bg: #faf9f7;
+  --surface: #ffffff;
+  --surface-2: #f4f3f1;
+  --surface-3: #edecea;
+  --fill-1: rgba(28, 27, 34, 0.035);
+  --fill-2: rgba(28, 27, 34, 0.06);
+  --fill-3: rgba(28, 27, 34, 0.095);
+  --line: rgba(28, 27, 34, 0.09);
+  --line-strong: rgba(28, 27, 34, 0.17);
 
-  --mint: #5fe3b5;
-  --mint-soft: rgba(95, 227, 181, 0.12);
-  --mint-line: rgba(95, 227, 181, 0.28);
+  /* ---- Text: deep charcoal + grays ---- */
+  --text: #1a1922;
+  --text-2: #55525f;
+  --text-3: #7c7989;
+  --text-4: #a5a2b0;
+  --on-accent: #ffffff;
 
-  --gold: #f6c76a;
-  --danger: #ff6b81;
-  --danger-soft: rgba(255, 107, 129, 0.12);
+  /* ---- Semantic accents ---- */
+  --success: #0f9d6e;
+  --success-soft: rgba(16, 185, 129, 0.1);
+  --success-line: rgba(16, 185, 129, 0.3);
+  --danger: #d92d3a;
+  --danger-soft: rgba(217, 45, 58, 0.07);
+  --danger-line: rgba(217, 45, 58, 0.26);
+  --gold: #d98a08;
+  --gold-soft: rgba(217, 138, 8, 0.11);
+  --gold-line: rgba(217, 138, 8, 0.3);
+  --coral: #e5533d;
+  --coral-soft: rgba(229, 83, 61, 0.09);
 
-  /* Gradients */
-  --grad-ember: linear-gradient(135deg, #ffa268 0%, #ff7a53 50%, #f2653f 100%);
-  --grad-surface: linear-gradient(180deg, rgba(255, 255, 255, 0.048) 0%, rgba(255, 255, 255, 0.018) 100%);
-  --grad-panel: linear-gradient(165deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0.012) 55%);
+  /* ---- Legacy aliases (used across components/pages) ---- */
+  --ink-0: var(--bg);
+  --ink-1: var(--surface);
+  --ink-2: var(--surface-2);
+  --ink-3: var(--surface-3);
 
-  /* Shape */
+  --ember: var(--brand);
+  --ember-bright: var(--brand-bright);
+  --ember-deep: var(--brand-deep);
+  --ember-soft: var(--brand-soft);
+  --ember-line: var(--brand-line);
+
+  --mint: var(--success);
+  --mint-soft: var(--success-soft);
+  --mint-line: var(--success-line);
+
+  --grad-ember: linear-gradient(135deg, #6d5ff0 0%, #5b4fe8 55%, #4a3fd4 100%);
+  --grad-mint: linear-gradient(90deg, #10b981, #34d399);
+  --grad-gold: linear-gradient(90deg, #d98a08, #f0b429);
+  --grad-grey: linear-gradient(90deg, #8b8794, #b0acb8);
+  --grad-surface: linear-gradient(180deg, #ffffff 0%, #fdfdfc 100%);
+  --grad-panel: linear-gradient(165deg, #ffffff, #f6f5f3 60%);
+  --grad-text: linear-gradient(102deg, #5b4fe8 0%, #7c6ff5 46%, #e5533d 100%);
+
+  /* ---- Shape ---- */
   --r-xs: 8px;
   --r-sm: 10px;
   --r-md: 14px;
-  --r-lg: 20px;
-  --r-xl: 26px;
+  --r-lg: 18px;
+  --r-xl: 24px;
   --r-full: 999px;
 
-  /* Elevation */
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
-  --shadow-md: 0 12px 30px -12px rgba(0, 0, 0, 0.7);
-  --shadow-lg: 0 40px 90px -40px rgba(0, 0, 0, 0.9);
-  --glow-ember: 0 14px 40px -14px rgba(255, 122, 83, 0.65);
+  /* ---- Elevation (soft, tinted — light theme) ---- */
+  --shadow-sm: 0 1px 2px rgba(28, 27, 34, 0.06);
+  --shadow-md: 0 12px 28px -14px rgba(28, 27, 34, 0.18);
+  --shadow-lg: 0 40px 80px -40px rgba(28, 27, 34, 0.28);
+  --shadow-card: 0 1px 2px rgba(28, 27, 34, 0.04), 0 8px 24px -18px rgba(28, 27, 34, 0.2);
+  --glow-ember: 0 14px 32px -14px rgba(91, 79, 232, 0.55);
 
-  /* Motion */
+  /* ---- Motion ---- */
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
   --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
-  --dur: 220ms;
+  --dur: 200ms;
 
-  /* Layout */
+  /* ---- Layout ---- */
   --sidebar-w: 258px;
   --content-max: 1120px;
 
-  /* Type */
+  /* ---- Type ---- */
   --font-ui: 'Inter Variable', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
   --font-display: 'Instrument Serif', 'Iowan Old Style', Georgia, 'Times New Roman', serif;
 }
@@ -93,26 +134,15 @@ body {
   line-height: 1.55;
   font-weight: 400;
   color: var(--text);
-  background-color: var(--ink-0);
+  background-color: var(--bg);
   background-image:
-    radial-gradient(1100px 620px at 12% -12%, rgba(255, 138, 76, 0.11), transparent 62%),
-    radial-gradient(900px 520px at 102% 2%, rgba(95, 227, 181, 0.07), transparent 58%),
-    radial-gradient(700px 700px at 50% 120%, rgba(120, 100, 255, 0.06), transparent 65%);
+    radial-gradient(1100px 620px at 12% -14%, rgba(91, 79, 232, 0.07), transparent 62%),
+    radial-gradient(900px 520px at 104% 0%, rgba(229, 83, 61, 0.05), transparent 56%),
+    radial-gradient(760px 700px at 50% 118%, rgba(16, 185, 129, 0.05), transparent 65%);
   background-attachment: fixed;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-}
-
-/* Fine film grain — keeps large dark areas from looking flat. */
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  z-index: 0;
-  pointer-events: none;
-  opacity: 0.028;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='180' height='180' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
 img,
@@ -146,33 +176,33 @@ ol {
 }
 
 :focus-visible {
-  outline: 2px solid var(--ember);
+  outline: 2px solid var(--brand);
   outline-offset: 2px;
   border-radius: 4px;
 }
 
 ::selection {
-  background: rgba(255, 138, 76, 0.28);
-  color: #fff;
+  background: rgba(91, 79, 232, 0.22);
+  color: var(--text);
 }
 
 /* Thin, unobtrusive scrollbars */
 * {
   scrollbar-width: thin;
-  scrollbar-color: rgba(255, 255, 255, 0.14) transparent;
+  scrollbar-color: rgba(28, 27, 34, 0.18) transparent;
 }
 *::-webkit-scrollbar {
   width: 10px;
   height: 10px;
 }
 *::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.12);
+  background: rgba(28, 27, 34, 0.16);
   border: 3px solid transparent;
   border-radius: 999px;
   background-clip: content-box;
 }
 *::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.22);
+  background: rgba(28, 27, 34, 0.28);
   background-clip: content-box;
 }
 
@@ -182,7 +212,7 @@ h1,
 h2,
 h3,
 h4 {
-  font-weight: 500;
+  font-weight: 550;
   line-height: 1.15;
   letter-spacing: -0.015em;
 }
@@ -209,10 +239,10 @@ h4 {
 
 .eyebrow {
   font-size: 0.6875rem;
-  font-weight: 600;
+  font-weight: 650;
   letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--text-3);
+  color: var(--brand);
 }
 
 .muted {
@@ -227,10 +257,10 @@ h4 {
 }
 
 .text-ember {
-  color: var(--ember);
+  color: var(--brand);
 }
 .text-mint {
-  color: var(--mint);
+  color: var(--success);
 }
 
 /* --------------------------------------------------------------- helpers */
@@ -270,6 +300,9 @@ h4 {
 }
 .gap-12 {
   gap: 12px;
+}
+.gap-14 {
+  gap: 14px;
 }
 .gap-16 {
   gap: 16px;
@@ -386,13 +419,13 @@ h4 {
 
 @keyframes pulse-ring {
   0% {
-    box-shadow: 0 0 0 0 rgba(255, 138, 76, 0.4);
+    box-shadow: 0 0 0 0 rgba(91, 79, 232, 0.32);
   }
   70% {
-    box-shadow: 0 0 0 10px rgba(255, 138, 76, 0);
+    box-shadow: 0 0 0 10px rgba(91, 79, 232, 0);
   }
   100% {
-    box-shadow: 0 0 0 0 rgba(255, 138, 76, 0);
+    box-shadow: 0 0 0 0 rgba(91, 79, 232, 0);
   }
 }
 

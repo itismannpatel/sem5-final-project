@@ -1,5 +1,7 @@
 /* ==========================================================================
    Twofold — layout
+   Shell = sidebar (desktop) + sticky topbar + content; on mobile the
+   sidebar collapses into a top bar and a bottom tab bar.
    ========================================================================== */
 
 .shell {
@@ -17,12 +19,11 @@
   top: 0;
   display: flex;
   flex-direction: column;
-  gap: 26px;
+  gap: 24px;
   height: 100dvh;
-  padding: 22px 14px 16px;
+  padding: 20px 14px 16px;
   border-right: 1px solid var(--line);
-  background: linear-gradient(180deg, rgba(255, 255, 255, 0.022), transparent 38%);
-  backdrop-filter: blur(12px);
+  background: var(--surface);
 }
 
 .brand {
@@ -39,7 +40,7 @@
   height: 30px;
   border-radius: 9px;
   background: var(--grad-ember);
-  color: #1a0c05;
+  color: var(--on-brand);
   box-shadow: var(--glow-ember);
   flex: none;
 }
@@ -52,7 +53,7 @@
 }
 
 .brand-name span {
-  color: var(--ember);
+  color: var(--brand);
 }
 
 .nav {
@@ -64,10 +65,10 @@
 .nav-label {
   padding: 0 12px 8px;
   font-size: 0.625rem;
-  font-weight: 600;
+  font-weight: 650;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--text-4);
+  color: var(--text-3);
 }
 
 .nav-item {
@@ -79,7 +80,7 @@
   padding: 0 12px;
   border-radius: var(--r-sm);
   font-size: 0.875rem;
-  font-weight: 450;
+  font-weight: 500;
   color: var(--text-2);
   transition: background var(--dur) var(--ease), color var(--dur) var(--ease);
 }
@@ -90,7 +91,7 @@
 }
 
 .nav-item:hover {
-  background: rgba(255, 255, 255, 0.045);
+  background: var(--fill-1);
   color: var(--text);
 }
 
@@ -99,13 +100,13 @@
 }
 
 .nav-item.is-active {
-  color: var(--text);
-  background: linear-gradient(90deg, rgba(255, 138, 76, 0.16), rgba(255, 138, 76, 0.02));
-  box-shadow: inset 0 0 0 1px rgba(255, 138, 76, 0.16);
+  color: var(--brand-deep);
+  background: var(--brand-soft);
+  font-weight: 600;
 }
 
 .nav-item.is-active svg {
-  color: var(--ember);
+  color: var(--brand);
 }
 
 .nav-item.is-active::before {
@@ -117,7 +118,27 @@
   width: 3px;
   height: 20px;
   border-radius: 0 3px 3px 0;
-  background: var(--ember);
+  background: var(--brand);
+}
+
+/* Twofold Pro — permanently emphasised so the premium surface is discoverable */
+.nav-item-pro {
+  color: var(--brand-deep);
+  background: linear-gradient(90deg, var(--brand-soft), rgba(139, 131, 246, 0.12));
+  border: 1px solid var(--brand-line);
+}
+
+.nav-item-pro svg {
+  color: var(--brand);
+}
+
+.nav-item-pro:hover {
+  background: var(--brand-soft-2);
+  color: var(--brand-deep);
+}
+
+.nav-item-pro.is-active::before {
+  background: var(--lavender);
 }
 
 .nav-count {
@@ -128,8 +149,8 @@
   display: grid;
   place-items: center;
   border-radius: var(--r-full);
-  background: var(--ember);
-  color: #1a0c05;
+  background: var(--brand);
+  color: var(--on-brand);
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0;
@@ -145,17 +166,17 @@
 .user-card {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 9px 10px;
+  gap: 8px;
+  padding: 8px;
   border-radius: var(--r-md);
   border: 1px solid var(--line);
-  background: rgba(255, 255, 255, 0.028);
+  background: var(--fill-1);
   transition: border-color var(--dur) var(--ease), background var(--dur) var(--ease);
 }
 
 .user-card:hover {
   border-color: var(--line-strong);
-  background: rgba(255, 255, 255, 0.05);
+  background: var(--surface);
 }
 
 .user-card-meta {
@@ -167,7 +188,7 @@
 
 .user-card-name {
   font-size: 0.8125rem;
-  font-weight: 550;
+  font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -181,29 +202,57 @@
   text-overflow: ellipsis;
 }
 
-.sidebar-hint {
-  padding: 12px;
-  border-radius: var(--r-md);
-  border: 1px dashed rgba(255, 255, 255, 0.1);
-  background: rgba(255, 138, 76, 0.035);
-}
+/* ----------------------------------------------------------------- topbar */
 
-.sidebar-hint-title {
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.7rem;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--ember);
-  margin-bottom: 4px;
+  justify-content: space-between;
+  gap: 16px;
+  height: 62px;
+  padding: 0 30px;
+  border-bottom: 1px solid var(--line);
+  background: rgba(250, 249, 247, 0.85);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
 }
 
-.sidebar-hint p {
-  font-size: 0.72rem;
-  line-height: 1.45;
-  color: var(--text-3);
+.topbar-title {
+  font-family: var(--font-display);
+  font-size: 1.35rem;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  line-height: 1.1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: none;
+}
+
+.topbar-avatar {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: var(--surface);
+  transition: border-color var(--dur) var(--ease), box-shadow var(--dur) var(--ease);
+}
+
+.topbar-avatar:hover {
+  border-color: var(--brand-line);
+  box-shadow: 0 0 0 3px var(--brand-soft);
 }
 
 /* ------------------------------------------------------------------- main */
@@ -218,7 +267,7 @@
   width: 100%;
   max-width: var(--content-max);
   margin: 0 auto;
-  padding: 34px 40px 88px;
+  padding: 30px 40px 88px;
   animation: fade-in 0.25s var(--ease);
 }
 
@@ -226,20 +275,20 @@
   max-width: 1400px;
 }
 
+/* Page head: subtitle + contextual actions (the h1 lives in the topbar). */
 .page-head {
   display: flex;
-  align-items: flex-end;
+  align-items: center;
   justify-content: space-between;
   gap: 24px;
-  margin-bottom: 26px;
+  margin-bottom: 24px;
   flex-wrap: wrap;
 }
 
 .page-head p {
-  margin-top: 6px;
   color: var(--text-2);
   font-size: 0.9rem;
-  max-width: 58ch;
+  max-width: 62ch;
 }
 
 .section {
@@ -322,7 +371,7 @@
   height: 52px;
   border-radius: 16px;
   background: var(--grad-ember);
-  color: #1a0c05;
+  color: var(--on-brand);
   box-shadow: var(--glow-ember);
   animation: pulse-ring 2.2s var(--ease) infinite;
 }
@@ -335,7 +384,7 @@
 }
 
 .boot-word span {
-  color: var(--ember);
+  color: var(--brand);
 }
 
 .boot-note {
@@ -347,7 +396,7 @@
 
 @media (max-width: 1180px) {
   .content {
-    padding: 30px 28px 96px;
+    padding: 28px 28px 96px;
   }
   .sidebar-layout {
     grid-template-columns: minmax(0, 1fr);
@@ -359,7 +408,8 @@
     grid-template-columns: minmax(0, 1fr);
   }
 
-  .sidebar {
+  .sidebar,
+  .topbar {
     display: none;
   }
 
@@ -374,8 +424,9 @@
     height: 58px;
     padding: 0 18px;
     border-bottom: 1px solid var(--line);
-    background: rgba(7, 6, 10, 0.82);
+    background: rgba(250, 249, 247, 0.88);
     backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
   }
 
   .mobile-tabs {
@@ -385,11 +436,12 @@
     right: 0;
     z-index: 50;
     display: grid;
-    grid-template-columns: repeat(5, 1fr);
+    grid-template-columns: repeat(6, 1fr);
     padding: 7px 6px calc(7px + env(safe-area-inset-bottom));
     border-top: 1px solid var(--line);
-    background: rgba(8, 7, 12, 0.92);
+    background: rgba(255, 255, 255, 0.94);
     backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
   }
 
   .mobile-tab {
@@ -407,7 +459,7 @@
   }
 
   .mobile-tab.is-active {
-    color: var(--ember);
+    color: var(--brand);
   }
 
   .content {
@@ -431,5 +483,13 @@
 @media (max-width: 560px) {
   .grid-cards {
     grid-template-columns: minmax(0, 1fr);
+  }
+
+  /* Title and its note/action sit side by side on desktop; on a phone the
+     title wraps mid-word next to the note, so stack them. */
+  .section-head {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
   }
 }

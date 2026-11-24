@@ -4,6 +4,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useState,
   useSyncExternalStore,
   type ReactNode,
 } from 'react'
@@ -12,25 +13,34 @@ import {
   getCurrentUserId,
   getSnapshot,
   isLoaded,
-  setCurrentUserId,
   startPolling,
   subscribe,
 } from '../data/store'
-import { resetDatabase } from '../data/api'
+import {
+  login as loginRequest,
+  logout as logoutRequest,
+  register as registerRequest,
+  restoreSession,
+  type AuthResult,
+  type RegisterInput,
+} from '../data/api'
 
 interface AppContextValue {
   db: Database
   user: User | null
-  signIn: (userId: string) => void
+  /** Real server-side login (email/handle + password). */
+  login: (identifier: string, password: string) => Promise<AuthResult>
+  /** Create a profile with credentials and sign in. */
+  register: (input: RegisterInput) => Promise<AuthResult>
   signOut: () => void
-  resetDemo: () => void
 }
 
 const AppContext = createContext<AppContextValue | null>(null)
 
 /**
- * First paint. Shown until the first `/api/state` lands, so the app never
- * renders an empty shell against an unloaded database.
+ * First paint. Shown only until the session probe answers — an anonymous
+ * visitor then goes straight to the landing/auth routes, because there is no
+ * user data to wait for (and `/api/state` is closed to them).
  */
 function BootScreen() {
   return (
@@ -53,33 +63,49 @@ function BootScreen() {
 export function AppProvider({ children }: { children: ReactNode }) {
   const db = useSyncExternalStore(subscribe, getSnapshot, getSnapshot)
   const currentUserId = getCurrentUserId()
+  const [booted, setBooted] = useState(false)
 
-  // Poll the server once a second; stops itself when the tab is hidden.
-  useEffect(() => startPolling(), [])
+  // One session probe on boot. No cookie → no state fetch and no poll: the
+  // landing and sign-in pages are public, everything else is behind the guard.
+  useEffect(() => {
+    void restoreSession().finally(() => setBooted(true))
+  }, [])
+
+  // Poll (and load the first snapshot) only while signed in. The cleanup stops
+  // the interval on sign-out; a 401 mid-poll also clears the session.
+  const userId = currentUserId
+  useEffect(() => {
+    if (!userId) return
+    return startPolling()
+  }, [userId])
 
   const user = useMemo(
     () => db.users.find((candidate) => candidate.id === currentUserId) ?? null,
     [db, currentUserId],
   )
 
-  const signIn = useCallback((userId: string) => {
-    setCurrentUserId(userId)
+  const login = useCallback((identifier: string, password: string) => {
+    return loginRequest(identifier, password)
+  }, [])
+
+  const register = useCallback((input: RegisterInput) => {
+    return registerRequest(input)
   }, [])
 
   const signOut = useCallback(() => {
-    setCurrentUserId(null)
-  }, [])
-
-  const resetDemo = useCallback(() => {
-    void resetDatabase()
+    void logoutRequest()
   }, [])
 
   const value = useMemo<AppContextValue>(
-    () => ({ db, user, signIn, signOut, resetDemo }),
-    [db, user, signIn, signOut, resetDemo],
+    () => ({ db, user, login, register, signOut }),
+    [db, user, login, register, signOut],
   )
 
-  if (!isLoaded()) return <BootScreen />
+  if (!booted) return <BootScreen />
+  // A signed-in session has an id as soon as the probe answers, but its rows
+  // arrive with the first snapshot. Wait for them: otherwise a hard load of
+  // /discover renders the guard with user = null and bounces to /auth.
+  if (currentUserId && !isLoaded()) return <BootScreen />
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>
 }

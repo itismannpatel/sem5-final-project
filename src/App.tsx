@@ -9,6 +9,8 @@ import { Profile } from './pages/Profile'
 import { MyProfile } from './pages/MyProfile'
 import { Sessions } from './pages/Sessions'
 import { Chat } from './pages/Chat'
+import { ProPage } from './pages/ProPage'
+import { Dashboard } from './pages/Dashboard'
 
 function ProtectedLayout() {
   const { user } = useApp()
@@ -27,6 +29,7 @@ export default function App() {
       <Route path="/auth" element={<Auth />} />
 
       <Route element={<ProtectedLayout />}>
+        <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/discover" element={<Discover />} />
         <Route path="/matches" element={<Matches />} />
         <Route path="/sessions" element={<Sessions />} />
@@ -34,9 +37,10 @@ export default function App() {
         <Route path="/messages/:partnerId" element={<Chat />} />
         <Route path="/u/:userId" element={<Profile />} />
         <Route path="/profile" element={<MyProfile />} />
+        <Route path="/pro" element={<ProPage />} />
       </Route>
 
-      <Route path="*" element={<Navigate to="/discover" replace />} />
+      <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
   )
 }

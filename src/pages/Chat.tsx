@@ -14,14 +14,6 @@ import { EmptyState } from '../components/EmptyState'
 import { Icon } from '../components/icons'
 import { useToast } from '../components/Toast'
 
-const DEMO_REPLIES = [
-  'That works for me — see you then.',
-  'Perfect. I will bring the messy version of the file.',
-  'Ha, yes. Let us keep it to an hour and go from there.',
-  'Sounds good. Send me anything you want me to skim beforehand.',
-  'Deal. I will add it to my calendar now.',
-]
-
 function useIsDesktop() {
   const [desktop, setDesktop] = useState(
     () => typeof window !== 'undefined' && window.matchMedia('(min-width: 901px)').matches,
@@ -51,7 +43,6 @@ export function Chat() {
   const messages = partner ? listMessages(me.id, partner.id, db) : []
 
   const [draft, setDraft] = useState('')
-  const [typing, setTyping] = useState(false)
   const [sending, setSending] = useState(false)
   const bodyRef = useRef<HTMLDivElement>(null)
 
@@ -86,15 +77,6 @@ export function Chat() {
     }
   }
 
-  const simulateReply = () => {
-    if (!partner) return
-    setTyping(true)
-    const reply = DEMO_REPLIES[messages.length % DEMO_REPLIES.length]
-    window.setTimeout(() => {
-      void sendMessage(partner.id, me.id, reply).then(() => setTyping(false))
-    }, 900)
-  }
-
   const entries = threads.map((thread) => ({
     partnerId: thread.partnerId,
     user: getUser(thread.partnerId, db),
@@ -118,9 +100,9 @@ export function Chat() {
       <div className="thread-list">
         <div className="thread-list-head">
           <div className="row between gap-10">
-            <h1 className="section-title" style={{ fontSize: '1.35rem' }}>
+            <h2 className="section-title" style={{ fontSize: '1.35rem' }}>
               Messages
-            </h1>
+            </h2>
             <span className="chip">{threads.length}</span>
           </div>
           <p className="faint" style={{ fontSize: '0.72rem', marginTop: 4 }}>
@@ -199,22 +181,13 @@ export function Chat() {
                   {partner.name}
                 </Link>
                 <div className="conv-head-sub">
-                  {typing ? 'typing…' : `${partner.branch} · usually replies fast`}
+                  {partner.branch} · usually replies fast
                 </div>
               </div>
               <Link to={`/u/${partner.id}`} className="btn btn-quiet btn-sm">
                 Profile
                 <Icon name="arrowUpRight" size={13} />
               </Link>
-              <button
-                type="button"
-                className="btn btn-outline btn-sm"
-                onClick={simulateReply}
-                title="For the demo: sends a sample reply as this student"
-              >
-                <Icon name="sparkles" size={13} />
-                Demo reply
-              </button>
             </div>
 
             <div className="conv-body" ref={bodyRef}>
@@ -245,7 +218,6 @@ export function Chat() {
                 )
               })}
 
-              {typing && <div className="bubble bubble-them">…</div>}
             </div>
 
             <div className="composer">

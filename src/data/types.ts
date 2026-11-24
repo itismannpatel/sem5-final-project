@@ -52,7 +52,7 @@ export interface User {
   joinedAt: string
   /** Hue (0-360) used to generate this student's deterministic avatar. */
   hue: number
-  /** Seed accounts are pre-verified for the demo. */
+  /** Seed profiles are pre-verified as established campus accounts. */
   verified: boolean
 }
 
@@ -103,6 +103,22 @@ export interface Message {
 }
 
 /**
+ * A captured sandbox payment for Twofold Pro (test mode — no real money).
+ * Declined attempts are never persisted: they fail with HTTP 402 instead.
+ */
+export interface Payment {
+  id: string
+  userId: string
+  plan: string
+  amountMinor: number
+  currency: string
+  /** Sandbox token, masked by the server (`****4242`). */
+  cardToken: string
+  status: string
+  createdAt: string
+}
+
+/**
  * The whole server snapshot the client renders from.
  *
  * `version` is a monotonic counter the server bumps on every write; the client
@@ -115,6 +131,17 @@ export interface Database {
   sessions: Session[]
   reviews: Review[]
   messages: Message[]
+  payments: Payment[]
+}
+
+/** A user's Twofold Pro standing, derived from the payment ledger. */
+export interface PremiumStatus {
+  userId: string
+  active: boolean
+  plan: string | null
+  since: string | null
+  until: string | null
+  payments: number
 }
 
 export interface RatingSummary {

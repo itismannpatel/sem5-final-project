@@ -73,7 +73,7 @@ export function ReviewModal({ session, open, onClose }: ReviewModalProps) {
         </>
       }
     >
-      <div className="stack gap-18">
+      <div className="stack gap-16">
         <div className="row gap-12">
           <Avatar user={partner} size="md" />
           <div>

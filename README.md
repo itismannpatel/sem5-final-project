@@ -1,69 +1,67 @@
 # Twofold
 
-**A peer-to-peer skill exchange for students.** Teach what you know, learn what you don't — a fair two-way swap, no money involved.
+**A peer-to-peer skill exchange for students.** Teach what you know, learn what you don't —
+a fair two-way swap, no money involved.
 
-Built for **Topic #03 · Peer-to-Peer Skill Exchange**: a marketplace-style web app connecting students who can teach a skill with students who want to learn it, with matching, chat, scheduling, calendar sync and reviews.
+Built for **Topic #03 · Peer-to-Peer Skill Exchange**: a marketplace-style web app connecting
+students who can teach a skill with students who want to learn it, with matching, chat,
+scheduling, calendar sync, reviews and a sandbox premium tier.
 
 ![Twofold landing page](screenshots/landing.png)
 
-> **One command, one port.** Clone → `npm install` → `npm run dev`. Vite serves the React app and mounts its SQLite API in the same process; there are no API keys or separate services to configure.
+> **One command.** Clone → `npm install` → `npm run dev`. That builds the Java backend and
+> starts Spring Boot plus Vite together; the browser sees one origin (`:5173`) because Vite
+> proxies `/api` to `:8080`. No API keys, no database install, no migration step.
 
 ---
 
-## Team
+## Requirements
 
-Built together by **Team TV26-COD-8031** for the Promethia Coding Challenge. Every feature was pair-built and reviewed across the team; the roles below reflect primary ownership.
+| Need | Version | Why |
+|---|---|---|
+| **JDK 21** | Temurin 21 (LTS) | The backend is Spring Boot 4.2 on Java 21; the wrapper supplies Maven, not the JDK |
+| **Node 20** | 20+ | Builds the React app (`engines: >=20`). Built and tested on Node 20; the frontend has no native dependencies, so newer majors normally work too but are untested here |
 
-| Member | Role |
-|---|---|
-| **Patel Mann Sanjay** | Team Lead & Full-Stack Integration — architecture, API ↔ frontend wiring, project docs |
-| **Rathod Bharatsinh Narsangbhai** | Backend & Database — SQLite schema, the 12-endpoint REST API, prepared-SQL query layer |
-| **Shah Jainam Kalpeshbhai** | Frontend & UI/UX — React pages, the reusable component library, design-token CSS system |
-| **Sadhu Aaditya Manishkumar** | Matching Engine & Scheduling — the 100-point scoring algorithm, iCalendar (`.ics`) export |
-| **Gohel Devang Prakashbhai** | Chat, Testing & QA — cross-tab chat sync, the 41-check automated smoke suite, docs |
-
----
+Nothing else — no Docker, no database server, no environment variables. The backend
+embeds **SQLite** and keeps its data in `backend/twofold.db`, created and seeded on first
+boot (outside `target/`, so rebuilds cannot wipe it).
 
 ## Quick start
 
 ```bash
 npm install
-npm run dev
+npm run dev          # builds the jar if needed, then Spring Boot :8080 + Vite :5173
 ```
 
-Open **http://localhost:5173**.
-
-Requires Node 20+. Nothing else — no Docker, no Postgres, no environment variables, and no separate migration step.
-
-To check the production bundle:
+Open **http://localhost:5173**. Health check: **http://localhost:8080/actuator/health**.
 
 ```bash
-npm run build && npm run preview
+npm run build        # typecheck + production React bundle
+npm run preview      # :4173, still proxying to a running backend
+npm run typecheck    # tsc --noEmit
+npm run db:reset     # delete the database; next boot creates and seeds it
 ```
 
-The preview server mounts the same API middleware as the development server.
+### Backend commands
 
-The SQLite database is generated at `server/db/twofold.db` and reseeded when the server starts. To force a fresh seed, stop the server, run `npm run db:reset`, then restart it.
+```bash
+export JAVA_HOME="/path/to/temurin-21"
+cd backend
+./mvnw spring-boot:run          # API only, :8080 (reset disabled by default)
+./mvnw -B verify               # 89 tests + JaCoCo coverage
+./mvnw -B -DskipTests package  # fat jar (~37 MB)
+```
 
----
+**Stop any running jar before packaging** — on Windows the repackage rename fails while a
+JVM holds the file, which silently leaves a thin jar behind.
 
-## The 5-minute demo
+### Seed data
 
-1. Open the app and hit **Enter the demo**.
-2. Pick a student on the sign-in screen — **Aarav Mehta** is preselected and has the richest data. Every profile is fully populated.
-3. **Discover** — search, filter by subject, toggle *Two-way only*, and watch match scores update.
-4. **Matches** — see the ranking with a transparent score breakdown per student.
-5. Open a match → **Request session** → choose a skill, topic and up to three time slots → **Send request**.
-6. **Sessions → Requests** — accept a proposed time (this generates a calendar-ready `.ics`), or withdraw a request you sent.
-7. **Messages** — send a message. The **Demo reply** button in the conversation header sends a sample reply as the other student, so a single-window demo still feels alive.
-8. **Completed → Leave a review** — rate a finished session; the review appears on that student's public profile and feeds back into matching.
-9. **My profile** — edit your skills, levels and availability, then check how your matches change.
-
-### Try the cross-tab sync
-
-Open a **second browser tab**, sign in as **Riya Sharma**, and keep Aarav in the first tab. Send a message from either side — it appears in the other tab within about a second. Each tab polls the same local API for an updated database snapshot. Chat and session requests are stored in SQLite and shared by every browser connected to this server.
-
-### Demo accounts
+The seed (12 students, 41 skills, 12 sessions — 9 completed, 2 confirmed, 1 proposed — 14 reviews, 9 messages)
+lives in `backend/src/main/resources/seed.json`; timestamps are shifted to "today" at boot,
+so "in 3 days" always reads correctly. It is **content, not accounts**: the seeded students
+have no password and cannot sign in — you create your own account and the profiles are
+people to discover, message and swap with. Six of the twelve profiles:
 
 | Student | Branch | Teaches | Wants to learn |
 |---|---|---|---|
@@ -74,145 +72,242 @@ Open a **second browser tab**, sign in as **Riya Sharma**, and keep Aarav in the
 | Meera Krishnan | Economics | Spanish, Public Speaking, Yoga | Marketing, Product Management |
 | Zoya Khan | Fine Arts | Illustration, Motion Design, Figma | React, SQL |
 
-Six more students are seeded and browsable from **Discover**. Pick another identity later from the sign-in screen, or click **Reset demo data** in the sidebar to restore the whole dataset.
-
 ---
 
-## Deliverables, and where they live
+## Accounts and reset
 
-| Brief requirement | Implementation |
+Authentication is real and server-side (`POST /api/auth/register` / `/api/auth/login`,
+BCrypt hash, HttpOnly session cookie). There is **no shared password and no demo account**:
+the only way in is to create a profile with an email and a password of 8+ characters, then
+sign in with either that email or the derived handle. The session survives restarts and
+signing out deletes it server-side; a signed-out visitor can still read the public landing
+page and its `/api/stats` summary, but every other read returns `401`.
+
+```bash
+# Register the first account in the browser, or from a terminal:
+curl -s -X POST http://localhost:8080/api/auth/register \
+  -H 'Content-Type: application/json' \
+  -d '{"name":"Priya Nambiar","email":"priya@campus.edu","password":"at-least-8"}'
+```
+
+### Reset (development only)
+
+`POST /api/reset` wipes every table and rewrites the seed at `version + 1`. It is **off by
+default** — `twofold.reset.enabled=false` in `backend/src/main/resources/application.properties`
+— so the shipped build answers `403` and can never expose a data wipe by accident.
+
+| Where | How reset is enabled |
 |---|---|
-| Deployed web app where students create and browse skill profiles | `src/pages/Discover.tsx`, `src/pages/Profile.tsx`, `src/pages/MyProfile.tsx` |
-| Working matching engine | `src/lib/matching.ts` — weighted, explainable, pure |
-| Functional in-app chat | `src/pages/Chat.tsx` — two-pane, persisted, live across tabs |
-| Scheduling module that syncs confirmed sessions to a calendar | `src/lib/ics.ts` — generates a real `.ics` (Google/Apple/Outlook) |
-| Live ratings and reviews visible on each profile | `src/components/ReviewModal.tsx`, `src/pages/Profile.tsx` |
-| Documented database schema and API | [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md), [`docs/API.md`](docs/API.md) |
-| Live demo: one real match from search → scheduled session | The seeded sessions cover every state, plus a full request/accept flow you can drive yourself |
-| Search and category filters | `src/pages/Discover.tsx` — free text + 8 subject categories + sort |
+| Local dev loop | `scripts/dev.mjs` (i.e. `npm run dev`) starts the API with `TWOFOLD_RESET_ENABLED=true` |
+| Java tests / smoke suite | Set the property themselves (`twofold.reset.enabled=true`) |
 
-![Discover](screenshots/discover.png)
+Everything else, including `./mvnw spring-boot:run` and a plain `java -jar`, keeps the
+fail-closed default. Reset also clears credentials and live sessions, so accounts you
+registered do not survive a reset — and the reseeded students still have no password.
 
-![Messages](screenshots/chat.png)
+## The 5-minute walkthrough
+
+1. Open the app and hit **Create profile**.
+2. Make an account (name, campus email, password) — you land on **My profile** with an empty
+   skill list; add what you can teach and what you want to learn.
+3. **Dashboard** — your two-way swaps, requests awaiting a reply, upcoming sessions, unread
+   messages, your strongest matches and reputation, all on one screen.
+4. **Discover** — search, filter by subject, toggle *Two-way only*, watch scores update
+   (scored by the **server**, `GET /api/matches?mode=all`).
+5. **Matches** — the ranking with a transparent breakdown per student
+   (`GET /api/matches`), two-way matches highlighted.
+6. Open a match → **Request session** → skill, topic, up to three slots → **Send request**.
+7. **Sessions → Requests** — accept a proposed time (generates a calendar-ready `.ics`) or
+   withdraw a request; accepted sessions move to **Upcoming** and can be marked complete.
+8. **Messages** — message a seeded student; open a second browser profile with a second
+   account you register to see the thread, read receipts and the one-second snapshot sync
+   from both sides.
+9. **Completed → Leave a review** — the review shows on their profile and re-ranks matches.
+10. **My profile** — edit skills and availability, then see matches change. **Twofold Pro**
+    is a sandbox checkout: ₹99/month or ₹349/semester, test tokens only
+    (`tok_decline_1` shows the decline path; nothing is ever charged).
 
 ---
 
-## The matching engine
+## Screens
 
-Every candidate is scored out of 100 on four signals (`src/lib/matching.ts`):
+![Dashboard](screenshots/dashboard.png)
 
-| Signal | Weight | What it measures |
-|---|---|---|
-| **Learn** | 45 | How many of *their* teachable skills are on *your* wishlist |
-| **Reciprocity** | 35 | How many of *your* teachable skills are on *their* wishlist |
-| **Affinity** | 12 | Shared subject areas, so adjacent interests surface too |
-| **Trust** | 8 | Their review history (new students get a neutral 60%) |
+| Discover | Matches |
+|---|---|
+| ![Discover](screenshots/discover.png) | ![Matches](screenshots/matches.png) |
 
-Learn and reciprocity saturate at two skills, so one perfect overlap already scores well. The engine is a pure function — same inputs, same score — and every card shows its own breakdown, so the number is never a black box.
+| Sessions | Messages |
+|---|---|
+| ![Sessions](screenshots/sessions.png) | ![Messages](screenshots/chat.png) |
 
-## Calendar sync
-
-A confirmed session exports a standards-compliant `VCALENDAR` file with `DTSTART`/`DTEND`, a 30-minute display alarm, organiser and attendee. It imports cleanly into Google Calendar, Apple Calendar and Outlook. No OAuth, no API credentials, works offline.
-
-![Sessions](screenshots/sessions.png)
+<p align="center">
+  <img src="screenshots/mobile-discover.png" alt="Twofold on a phone" width="320">
+</p>
 
 ---
 
 ## Architecture
 
 ```
-.
-├── index.html                 # Single entry point
-├── package.json
-├── vite.config.ts
-├── tsconfig.json
-├── README.md
-├── skill.md                   # Persistent project context (see below)
-├── docs/
-│   ├── DATA_MODEL.md          # Entity schema + storage layout
-│   └── API.md                 # Data API reference
-├── screenshots/
-└── src/
-    ├── main.tsx               # Fonts, styles, providers, router
-    ├── App.tsx                # Routes + auth guard
-    ├── components/            # 15 reusable UI pieces
-    │   ├── AppShell.tsx       # Sidebar + mobile tab bar
-    │   ├── Avatar.tsx         # Deterministic gradient avatars
-    │   ├── MatchCard.tsx      # Match card with score breakdown
-    │   ├── MatchRing.tsx      # Animated score dial
-    │   ├── SessionCard.tsx    # Session lifecycle + actions
-    │   ├── RequestSessionModal.tsx
-    │   ├── ReviewModal.tsx
-    │   ├── PersonCard.tsx, SkillChip.tsx, Rating.tsx
-    │   ├── Modal.tsx, Toast.tsx, Reveal.tsx, EmptyState.tsx
-    │   └── icons.tsx          # Hand-rolled 24px icon set
-    ├── context/
-    │   └── AppContext.tsx     # useSyncExternalStore over the store
-    ├── data/
-    │   ├── types.ts           # Domain entities
-    │   ├── catalog.ts         # 41 skills across 8 categories
-    │   ├── store.ts           # HTTP snapshot bus + 1-second polling
-    │   └── api.ts             # The only data access surface
-    ├── lib/
-    │   ├── matching.ts        # Scoring engine
-    │   ├── ics.ts             # iCalendar writer
-    │   ├── format.ts          # Date / text formatting
-    │   └── id.ts
-    ├── pages/
-    │   ├── Landing.tsx, Auth.tsx
-    │   ├── Discover.tsx, Matches.tsx
-    │   ├── Profile.tsx, MyProfile.tsx
-    │   ├── Sessions.tsx, Chat.tsx
-    └── styles/
-        ├── tokens.css         # Design tokens, reset, typography
-        ├── layout.css         # Shell, sidebar, grids
-        ├── components.css     # Buttons, inputs, cards, modal…
-        └── pages.css          # Page-specific composition
-server/
-├── api.ts                      # Connect-style JSON API
-├── db.ts                       # SQLite open, schema, seed and reset
-├── queries.ts                  # Prepared raw SQL queries
-├── seed.ts                     # Demo data and relative timestamps
-├── vite-plugin.ts              # API middleware for dev and preview
-└── db/schema.sql               # Committed SQLite schema (database file is generated)
+┌───────────────────────────┐        ┌──────────────────────────────┐
+│ React 18 + TypeScript     │  /api  │ Spring Boot 4.2 (Java 21)    │
+│ Vite · :5173              │ ─────▶ │ :8080                        │
+│ src/data/api.ts (seam)    │        │ http/ · matching/ · payments/│
+└───────────────────────────┘        │ jobs/ · state/ · store/      │
+                                     └──────────────┬───────────────┘
+                                                    │ one SQLite transaction
+                                     backend/twofold.db
+                                     (WAL) · reminders-outbox.jsonl
 ```
 
-**Data flow:** components → `src/data/api.ts` → `src/data/store.ts` → `/api/*` on the same Vite server → `server/api.ts` → prepared SQL in `server/queries.ts` → SQLite. The client loads a full snapshot and polls once per second; successful mutations return a fresh snapshot so the writing tab updates immediately. React subscribes through `useSyncExternalStore`.
+| Layer | Where | Notes |
+|---|---|---|
+| UI | `src/pages`, `src/components` | Never touches storage; all data through `src/data/api.ts` |
+| Snapshot cache | `src/data/store.ts` | 1-second polling while visible; version-keyed re-render |
+| API | `backend/.../http/ApiController.java` | 18 routes (incl. `/api/auth/*`, `/api/stats`), `{ "error": … }` bodies, session enforcement on every read but `/api/stats` |
+| Matching (D3) | `backend/.../matching/MatchEngine` | Same weights as the UI's original engine; exposed at `/api/matches` |
+| Premium (D4) | `backend/.../payments` | Sandbox gateway, masked tokens, 402 on decline, no state change |
+| Background job | `backend/.../jobs/ReminderJob` | `@Scheduled` session reminders → JSONL outbox, observable at `/api/reminders` |
+| Persistence | `backend/.../store/JdbcStorage` + `Db` | SQLite, versioned migrations, whole snapshot in one transaction, read/write lock, monotonic version |
+| Auth | `backend/.../auth` | BCrypt credentials, opaque server-side sessions, HttpOnly cookie, actor from session |
 
-**Runtime setup:** Vite hosts both the frontend and API in one process on one port, in development and preview. The ignored SQLite file is created from `server/db/schema.sql` and reseeded on every server boot; demo dates are generated in JavaScript relative to startup. `npm run db:reset` removes the database so it can be recreated on the next boot, and the in-app Reset demo data action restores the seed without a restart. `better-sqlite3` is pinned to **12.2.0** because v13 dropped the Node 20 prebuilt binary needed for a reliable install on the judging environment.
+```
+.
+├── backend/                       Spring Boot app (Maven Wrapper)
+│   ├── src/main/java/com/twofold/backend/
+│   │   ├── http/                  ApiController, ApiException(Handler), Js, NoStoreFilter, SpaController
+│   │   ├── domain/                User, Skill, ExchangeSkill, Session, Review, Message, Payment, Database
+│   │   ├── matching/              MatchEngine, MatchService
+│   │   ├── payments/              Plan, PaymentGateway, SandboxGateway, PaymentService, PremiumStatus
+│   │   ├── jobs/                  ReminderJob, ReminderOutbox
+│   │   ├── state/                 StateService, SeedClock
+│   │   ├── store/                 Storage, Db, JdbcStorage
+│   │   ├── auth/                  AuthService, AuthSession, JdbcAuthRepository
+│   │   └── config/                Jackson, Scheduling, Storage
+│   ├── src/main/resources/        application.properties, seed.json, db/migration/
+│   └── src/test/java/…            9 suites, 89 tests
+├── src/
+│   ├── data/                      types, api (seam), store (snapshot), catalog, stats, useMatches
+│   ├── lib/                       matching (offline fallback), ics, format, id
+│   ├── pages/                     Landing, Auth, Dashboard, Discover, Matches, Profile, MyProfile,
+│   │                              Sessions, Chat, ProPage
+│   ├── components/                AppShell, cards, modals, MatchRing, Rating, ProPanel, Toast…
+│   └── styles/                    tokens → layout → components → pages
+├── scripts/
+│   ├── dev.mjs                    one-command dev (jar build + both processes)
+│   ├── api-smoke.mjs              95-check contract suite
+│   ├── load-harness.mjs           reader/writer load + integrity checks
+│   └── matches-compare.mjs        Java vs client engine parity check
+└── docs/                          API, data model, UML, testing, business
+```
 
-## Tech stack
+### Design decisions
 
-- **React 18** + **TypeScript** (strict) + **Vite 5**
-- **React Router 6** for client-side routing
-- **Plain CSS** with a token layer — no utility framework, no CSS-in-JS runtime
-- **Self-hosted fonts** via `@fontsource` (Inter + Instrument Serif) — no network requests at runtime
-- **SQLite backend:** raw SQL through `better-sqlite3` 12.2.0; no ORM, generated client, or separate server process.
+- **One document, one API shape.** `GET /api/state` returns exactly what the UI renders;
+  storage and transport cannot drift.
+- **Server-authoritative scoring.** The Java engine ranks matches; the local
+  `src/lib/matching.ts` only paints the first frame or an offline fallback.
+- **No real money, everywhere.** The Pro checkout uses deterministic test tokens; declines
+  return 402 with the gateway's message and leave no ledger row.
+- **Polling, not websockets.** A one-second full-snapshot poll is enough for a demo, needs
+  no second process, and makes cross-tab sync visible and easy to explain.
+- **Auth at the edge of every read.** The session is a real server-side row, resolved per
+  request; the landing page is the only surface that works without one.
 
-## Design notes
+---
 
-- **Warm-on-ink palette:** near-black canvas with an ember accent for *what you teach* and mint for *what you want to learn*. The colour pairing carries meaning everywhere it appears.
-- **Editorial typography:** Instrument Serif for display, Inter for interface text, tight tracking on headlines.
-- Custom icon set drawn on a single 24px grid at 1.6px stroke for consistency.
-- Motion is used sparingly: scroll reveals, hover lifts, a drifting hero panel, animated score rings — all disabled under `prefers-reduced-motion`.
-- Responsive from 360px up: sidebar becomes a bottom tab bar, chat collapses to a single pane, grids reflow.
+## Matching engine
 
-## Scripts
+Every candidate is scored out of 100 (`backend/.../matching/MatchEngine`, mirrored in
+`src/lib/matching.ts`):
 
-| Command | Purpose |
+| Signal | Weight | What it measures |
+|---|---|---|
+| **Learn** | 45 | How many of *their* teachable skills are on *your* wishlist |
+| **Reciprocity** | 35 | How many of *your* teachable skills are on *their* wishlist |
+| **Affinity** | 12 | Shared subject areas, so adjacent interests surface too |
+| **Trust** | 8 | Their review history (new students get a neutral 60 %) |
+
+Learn and reciprocity saturate at two skills. Scores are never stored — adding a review or
+editing skills re-ranks everything immediately, and every card shows its own breakdown.
+
+## Calendar sync
+
+A confirmed session exports a standards-compliant `VCALENDAR` (`src/lib/ics.ts`) with
+`DTSTART`/`DTEND`, a 30-minute alarm, organiser and attendee — imports into Google, Apple
+and Outlook calendars, no OAuth, works offline.
+
+---
+
+## Cloud deployment (decided, not yet built)
+
+On **2026-11-25** the team chose the cloud shape: one **Render Free** Docker web service
+(serving the React build from the same jar) + **Neon Free Postgres** for durable data +
+free S3-compatible object storage for nightly database backups, with **GitHub Actions**
+as the CI/CD pipeline. Render and Neon accounts are already set up; **no deployment exists
+yet** and the app still runs on SQLite locally.
+
+| Piece | Choice | Free-tier limits that matter |
+|---|---|---|
+| Compute | Render Free web service, Docker, Singapore | 0.1 CPU / 512 MB, 750 instance-hours/mo, 5 GB bandwidth; sleeps after 15 min (~1 min wake) |
+| Database | Neon Free Postgres | 1 GB storage, 100 CU-hours/mo; never paused for inactivity |
+| Object storage | To be chosen (10 GB free bucket) | used only for backups, not runtime traffic |
+| CI/CD | GitHub Actions on the public repo | free on public repositories |
+
+Still to build before a URL exists: `PostgresStore`, the Dockerfile, packaging the Vite
+bundle into the jar, SPA deep-link fallback, `PORT` binding, a `Secure` cookie, the CI
+workflow and the backup job. The full design, risks and provisional cost table live in
+[`docs/CLOUD.md`](docs/CLOUD.md). Nothing in this section is currently deployed.
+
+---
+
+## Testing and quality
+
+```bash
+cd backend && ./mvnw -B verify                 # 89 tests, JaCoCo
+node scripts/api-smoke.mjs http://localhost:8080   # 95 contract checks
+node scripts/load-harness.mjs http://localhost:8080
+```
+
+| Evidence | Result | Document |
+|---|---|---|
+| Unit + integration + concurrency | **89/89 passing** | [`docs/testing/TEST_SUMMARY.md`](docs/testing/TEST_SUMMARY.md) |
+| Coverage | 91.6 % instructions, 78.7 % branches | `backend/target/site/jacoco/` |
+| API contract | 95/95 checks | [`docs/testing/API_CONTRACT.md`](docs/testing/API_CONTRACT.md) |
+| Load (SQLite build) | readers p95 149 ms; writers p95 149 ms, all integrity checks pass | `TEST_SUMMARY.md` §5 |
+| Security spot-check | 1 finding (`DEF-013`, fixed); auth now covers the old "no authN" note | [`docs/testing/SECURITY_SPOT_CHECK.md`](docs/testing/SECURITY_SPOT_CHECK.md) |
+| Defects | 16 logged, all verified | [`docs/testing/DEFECT_LOG.md`](docs/testing/DEFECT_LOG.md) |
+| Usability | instrument ready, session pending | [`docs/testing/USABILITY_CHECKLIST.md`](docs/testing/USABILITY_CHECKLIST.md) |
+
+Known limitations are listed in `TEST_SUMMARY.md` §7 — chiefly: no password reset or email
+verification, no rate limiting or CSRF token (mitigated by `SameSite=Lax`), no account
+deletion, and a single-writer SQLite database meant for one process. Every read except
+`GET /api/stats` requires a session, and `POST /api/reset` is fail-closed by default.
+
+---
+
+## Docs
+
+| File | What |
 |---|---|
-| `npm run dev` | Dev server on port 5173 |
-| `npm run build` | Typecheck + production build to `dist/` |
-| `npm run preview` | Serve the production build |
-| `npm run typecheck` | TypeScript only |
+| [`docs/API.md`](docs/API.md) | Every endpoint, status code and error contract |
+| [`docs/DATA_MODEL.md`](docs/DATA_MODEL.md) | Document shape, invariants, seed/reset |
+| [`docs/UML.md`](docs/UML.md) | Class diagram and request flow |
+| [`docs/CLOUD.md`](docs/CLOUD.md) | Chosen cloud architecture, gaps, risks and cost estimate |
+| [`docs/testing/`](docs/testing/) | Plan, cases, defect log, summary, security, usability |
+| [`docs/business/BUSINESS_DOCS_GUIDE.md`](docs/business/BUSINESS_DOCS_GUIDE.md) | Startup, e-commerce and compliance documents |
+| [`docs/project-guide-gujarati.md`](docs/project-guide-gujarati.md) | Project walkthrough in Gujarati |
 
-## Notes and limitations
+## Team
 
-- **Demo backend:** state lives in the local SQLite file on the machine running Vite. Browsers connected to that server share the same data; the app does not provision a hosted database.
-- **No real authentication.** Signing in selects one of the seeded students; it is a demo identity switch, not a login system.
-- **Chat polls the local API.** Data is stored in SQLite, and open tabs refresh within about one second. The *Demo reply* button is an explicitly labelled demo affordance, not a bot.
-- Seed timestamps are generated relative to server startup, so entries such as "in 3 days" stay current after a fresh run. Restarting the server restores the demo seed.
+Built by **Team TV26-COD-8031** for the Sem 5 integrated assignment. Roles reflect primary
+ownership; every feature was reviewed by at least one other member (see
+`docs/business/BUSINESS_DOCS_GUIDE.md` §6.18 for the contribution matrix).
 
-## Project context
-
-[`skill.md`](skill.md) is the persistent memory file for this project — architecture decisions, conventions, progress and next steps. Read it first if you are picking this up with fresh context.
+| Member | Role |
+|---|---|
+| **Patel Mann Sanjay** | Team Lead, Backend & Integration — architecture, domain, SQLite store, auth, API routes, docs |
+| **Shah Jainam Kalpeshbhai** | Frontend & UI/UX — pages, component library, design tokens |
+| **Sadhu Aaditya Manishkumar** | Matching & Scheduling — scoring engine, `.ics` export |
+| **Gohel Devang Prakashbhai** | Chat, Testing & QA — smoke suite, test plan/cases, defect log |

@@ -3,18 +3,20 @@ import type { Database } from './types'
 /**
  * Client-side snapshot bus.
  *
- * Replaces the old localStorage store. The shape of the contract is the same
- * — `getSnapshot()` + `subscribe()` behind `useSyncExternalStore` — but the
- * data now lives in SQLite and arrives over HTTP.
+ * Data lives in the backend's SQLite database and arrives over HTTP. Sync
+ * model: the server stamps every write with a monotonic `version`. The client
+ * polls `GET /api/state` once a second and only re-renders when that version
+ * actually moves, so an idle tab does no work beyond one tiny comparison.
+ * Mutations return the fresh snapshot directly, so your own writes paint
+ * immediately rather than waiting for the next tick.
  *
- * Sync model: the server stamps every write with a monotonic `version`. The
- * client polls `GET /api/state` once a second and only re-renders when that
- * version actually moves, so an idle tab does no work beyond one tiny
- * comparison. Mutations return the fresh snapshot directly, so your own
- * writes paint immediately rather than waiting for the next tick.
+ * Authentication (Task 2): the session is an opaque token in an HttpOnly cookie
+ * the browser sends automatically — this file never sees it. The only thing we
+ * keep is the *id* of the signed-in student, resolved from `GET /api/auth/me`
+ * and from login/register responses. A 401 anywhere clears it, which drops the
+ * route guard back to `/auth`.
  */
 
-const AUTH_KEY = 'twofold.auth.v1'
 const POLL_MS = 1000
 
 const EMPTY: Database = {
@@ -24,11 +26,14 @@ const EMPTY: Database = {
   sessions: [],
   reviews: [],
   messages: [],
+  payments: [],
 }
 
 let snapshot: Database = EMPTY
 let loaded = false
 let polling = false
+let pollTimer: number | null = null
+let authUserId: string | null = null
 const listeners = new Set<() => void>()
 
 function emit() {
@@ -60,11 +65,31 @@ export function subscribe(listener: () => void): () => void {
   }
 }
 
+/** Apply a snapshot returned by a write or an auth response. */
+export function applySnapshot(next: Database): void {
+  snapshot = next
+  loaded = true
+  emit()
+}
+
 /* ------------------------------------------------------------- transport */
 
 export async function refresh(): Promise<void> {
+  // `/api/state` now requires a session. Anonymous visitors hold no user rows
+  // at all, so a poll here would just collect 401s.
+  if (!authUserId) return
   try {
-    const response = await fetch('/api/state', { cache: 'no-store' })
+    const response = await fetch('/api/state', {
+      cache: 'no-store',
+      credentials: 'same-origin',
+    })
+    if (response.status === 401) {
+      // The session expired or was signed out elsewhere: drop it quietly and
+      // stop polling. The route guard takes the user to /auth.
+      stopPolling()
+      setSessionUserId(null)
+      return
+    }
     if (!response.ok) return
     apply((await response.json()) as Database)
   } catch {
@@ -78,10 +103,15 @@ async function send(method: 'POST' | 'PATCH', path: string, body: unknown): Prom
       method,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body ?? {}),
+      credentials: 'same-origin',
     })
     if (response.ok) {
       apply((await response.json()) as Database)
       return
+    }
+    if (response.status === 401) {
+      // The session expired or was signed out in another tab.
+      setSessionUserId(null)
     }
   } catch {
     /* fall through to a refetch */
@@ -100,11 +130,12 @@ export function patch(path: string, body?: unknown): Promise<void> {
 }
 
 /**
- * Start the 1s poll. Returns a stop function; safe to call twice.
- * Pauses while the tab is hidden so a backgrounded demo costs nothing.
+ * Start the 1s poll. Returns a stop function; safe to call twice, and a no-op
+ * while signed out (there is nothing to poll for). Pauses while the tab is
+ * hidden so a backgrounded tab costs nothing.
  */
 export function startPolling(): () => void {
-  if (polling) return () => {}
+  if (!authUserId || polling) return () => stopPolling()
   polling = true
 
   const tick = () => {
@@ -112,39 +143,37 @@ export function startPolling(): () => void {
   }
 
   void refresh()
-  const interval = window.setInterval(tick, POLL_MS)
+  pollTimer = window.setInterval(tick, POLL_MS)
 
-  return () => {
-    window.clearInterval(interval)
-    polling = false
+  return () => stopPolling()
+}
+
+/** Idempotent: used by 401 handling as well as by the component cleanup. */
+export function stopPolling(): void {
+  if (pollTimer !== null) {
+    window.clearInterval(pollTimer)
+    pollTimer = null
   }
+  polling = false
 }
 
 /* ------------------------------------------------------------------- auth */
 
 /**
- * The signed-in identity is client-only, deliberately: this is a demo
- * identity switcher, not an authentication system. No cookies, no passwords,
- * nothing to get locked out of during a judging slot.
+ * The signed-in student's id — the server-side session is the actual authority.
+ * Set from `/api/auth/me` on boot and from the login/register response; cleared
+ * by logout or any 401.
  */
 export function getCurrentUserId(): string | null {
-  try {
-    return localStorage.getItem(AUTH_KEY)
-  } catch {
-    return null
-  }
+  return authUserId
 }
 
-export function setCurrentUserId(id: string | null): void {
-  try {
-    if (id) localStorage.setItem(AUTH_KEY, id)
-    else localStorage.removeItem(AUTH_KEY)
-  } catch {
-    /* ignore */
-  }
+export function setSessionUserId(id: string | null): void {
+  if (authUserId === id) return
+  authUserId = id
   // The signed-in id lives outside the snapshot, so the data itself has not
-  // changed. Give the snapshot a new identity anyway: `useSyncExternalStore`
-  // bails out when the snapshot is `Object.is`-equal, and without this a fresh
+  // changed. Nudge the snapshot identity anyway: `useSyncExternalStore` bails
+  // out when the snapshot is `Object.is`-equal, and without this a fresh
   // sign-in would never re-render the app.
   if (loaded) snapshot = { ...snapshot }
   emit()

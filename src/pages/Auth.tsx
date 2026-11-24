@@ -1,49 +1,60 @@
 import { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { useApp } from '../context/AppContext'
-import { createUser } from '../data/api'
-import { SKILL_BY_ID } from '../data/catalog'
-import { Avatar } from '../components/Avatar'
+import { usePublicStats } from '../data/stats'
 import { Icon } from '../components/icons'
 import { useToast } from '../components/Toast'
-import type { User } from '../data/types'
 
-const DEMO_IDS = ['u_aarav', 'u_riya', 'u_ananya', 'u_kabir', 'u_meera', 'u_zoya']
 const YEARS = ['1st year', '2nd year', '3rd year', '4th year', 'Postgraduate']
 
-function summary(user: User): string {
-  const teaches = user.teaches[0] ? SKILL_BY_ID[user.teaches[0].skillId]?.name : null
-  const wants = user.wants[0] ? SKILL_BY_ID[user.wants[0].skillId]?.name : null
-  if (teaches && wants) return `${teaches} → ${wants}`
-  if (teaches) return `Teaches ${teaches}`
-  return user.branch
-}
-
+/**
+ * Sign in or create a profile. There are no pre-made accounts and no shared
+ * password: an account only exists if it was registered here, and the session
+ * it opens is a real server-side session.
+ */
 export function Auth() {
-  const { db, user, signIn } = useApp()
+  const { user, login, register } = useApp()
+  const stats = usePublicStats()
   const navigate = useNavigate()
   const toast = useToast()
 
-  const [mode, setMode] = useState<'demo' | 'create'>('demo')
-  const [selectedId, setSelectedId] = useState(DEMO_IDS[0])
+  const [mode, setMode] = useState<'signin' | 'create'>('signin')
+  const [signinForm, setSigninForm] = useState({ identifier: '', password: '' })
   const [form, setForm] = useState({
     name: '',
     email: '',
+    password: '',
     branch: '',
     year: YEARS[2],
     bio: '',
   })
   const [error, setError] = useState('')
+  const [busy, setBusy] = useState(false)
 
-  const demoUsers = DEMO_IDS.map((id) => db.users.find((candidate) => candidate.id === id)).filter(
-    (candidate): candidate is User => Boolean(candidate),
-  )
+  /** Run an auth call, surfacing the server's exact message on failure. */
+  const attempt = async (call: () => ReturnType<typeof login>): Promise<boolean> => {
+    setBusy(true)
+    setError('')
+    const result = await call()
+    setBusy(false)
+    if (!result.ok) {
+      setError(result.error)
+      return false
+    }
+    return true
+  }
 
-  const enter = () => {
-    signIn(selectedId)
-    const chosen = db.users.find((candidate) => candidate.id === selectedId)
-    toast(`Welcome, ${chosen?.name.split(' ')[0] ?? 'student'}`)
-    navigate('/discover')
+  const signIn = async () => {
+    if (!signinForm.identifier.trim() || !signinForm.password) {
+      setError('Enter your email (or handle) and password.')
+      return
+    }
+    const ok = await attempt(() =>
+      login(signinForm.identifier.trim(), signinForm.password),
+    )
+    if (!ok) return
+    toast('Signed in')
+    navigate('/dashboard')
   }
 
   const create = async () => {
@@ -55,11 +66,26 @@ export function Auth() {
       setError('That email does not look right.')
       return
     }
-    // createUser also signs the new student in.
-    await createUser(form)
+    if (form.password.length < 8) {
+      setError('Choose a password of at least 8 characters.')
+      return
+    }
+    const ok = await attempt(() =>
+      register({
+        name: form.name.trim(),
+        email: form.email.trim(),
+        password: form.password,
+        branch: form.branch,
+        year: form.year,
+        bio: form.bio,
+      }),
+    )
+    if (!ok) return
     toast('Profile created — add your skills next')
     navigate('/profile')
   }
+
+  const quote = stats?.quote
 
   return (
     <div className="auth">
@@ -75,36 +101,27 @@ export function Auth() {
 
         <div>
           <p className="auth-quote">
-            “I have taught forty people the four chords that unlock <em>nine hundred songs.</em>”
+            “{quote?.text ?? 'One hour of what you know buys one hour of what you don’t.'}”
           </p>
-          <div className="row gap-10" style={{ marginTop: 20 }}>
-            {db.users
-              .filter((candidate) => candidate.id === 'u_kabir')
-              .map((candidate) => (
-                <div key={candidate.id} className="row gap-10">
-                  <Avatar user={candidate} size="md" />
-                  <div>
-                    <div style={{ fontSize: '0.84rem', fontWeight: 550 }}>{candidate.name}</div>
-                    <div className="faint" style={{ fontSize: '0.72rem' }}>
-                      {candidate.branch} · {candidate.year}
-                    </div>
-                  </div>
-                </div>
-              ))}
-          </div>
+          {quote && (
+            <p className="faint" style={{ marginTop: 12, fontSize: '0.74rem' }}>
+              {quote.fromName} → {quote.toName} · {quote.rating}
+              <Icon name="star" size={11} />
+            </p>
+          )}
         </div>
 
         <div className="auth-side-foot">
           <div className="stat">
-            <span className="stat-value">{db.users.length}</span>
+            <span className="stat-value">{stats?.users ?? '—'}</span>
             <span className="stat-label">Students</span>
           </div>
           <div className="stat">
-            <span className="stat-value">{db.skills.length}</span>
+            <span className="stat-value">{stats?.skills ?? '—'}</span>
             <span className="stat-label">Skills</span>
           </div>
           <div className="stat">
-            <span className="stat-value">{db.sessions.length}</span>
+            <span className="stat-value">{stats?.sessions ?? '—'}</span>
             <span className="stat-label">Sessions</span>
           </div>
         </div>
@@ -112,11 +129,13 @@ export function Auth() {
 
       <main className="auth-panel">
         <div className="auth-card">
-          <h1 className="page-title">{mode === 'demo' ? 'Step inside.' : 'Create your profile.'}</h1>
+          <h1 className="page-title">
+            {mode === 'signin' ? 'Welcome back.' : 'Create your profile.'}
+          </h1>
           <p className="muted" style={{ marginTop: 8, marginBottom: 22, fontSize: '0.88rem' }}>
-            {mode === 'demo'
-              ? 'Pick a student to explore the app as them. Every profile is already populated with skills, sessions and conversations.'
-              : 'New profiles start empty — you will add what you teach and want to learn next.'}
+            {mode === 'signin'
+              ? 'Sign in with your campus email (or handle) and the password you chose.'
+              : 'Your account gets a real password; new profiles start empty and you add skills next.'}
           </p>
 
           {user && (
@@ -133,9 +152,9 @@ export function Auth() {
             >
               <Icon name="checkCircle" size={15} />
               <span className="grow">
-                Signed in as <strong>{user.name}</strong>. Pick someone else to switch.
+                Signed in as <strong>{user.name}</strong>.
               </span>
-              <Link to="/discover" className="btn btn-quiet btn-sm">
+              <Link to="/dashboard" className="btn btn-quiet btn-sm">
                 Continue
               </Link>
             </div>
@@ -144,54 +163,80 @@ export function Auth() {
           <div className="auth-switch">
             <button
               type="button"
-              className={mode === 'demo' ? 'is-on' : ''}
-              onClick={() => setMode('demo')}
+              className={mode === 'signin' ? 'is-on' : ''}
+              onClick={() => {
+                setMode('signin')
+                setError('')
+              }}
             >
-              Demo students
+              Sign in
             </button>
             <button
               type="button"
               className={mode === 'create' ? 'is-on' : ''}
-              onClick={() => setMode('create')}
+              onClick={() => {
+                setMode('create')
+                setError('')
+              }}
             >
               Create profile
             </button>
           </div>
 
-          {mode === 'demo' ? (
-            <>
-              <div className="demo-grid">
-                {demoUsers.map((candidate) => (
-                  <button
-                    key={candidate.id}
-                    type="button"
-                    className={`demo-account${selectedId === candidate.id ? ' is-on' : ''}`}
-                    onClick={() => setSelectedId(candidate.id)}
-                  >
-                    <Avatar user={candidate} size="sm" />
-                    <span style={{ minWidth: 0 }}>
-                      <span className="demo-account-name" style={{ display: 'block' }}>
-                        {candidate.name}
-                      </span>
-                      <span className="demo-account-sub" style={{ display: 'block' }}>
-                        {summary(candidate)}
-                      </span>
-                    </span>
-                  </button>
-                ))}
+          {mode === 'signin' && (
+            <div className="stack gap-14">
+              <div className="field">
+                <label htmlFor="signin-identifier">Email or handle</label>
+                <input
+                  id="signin-identifier"
+                  className="input"
+                  placeholder="you@campus.edu"
+                  autoComplete="username"
+                  value={signinForm.identifier}
+                  onChange={(event) =>
+                    setSigninForm({ ...signinForm, identifier: event.target.value })
+                  }
+                />
               </div>
 
-              <button type="button" className="btn btn-primary btn-lg btn-block" style={{ marginTop: 18 }} onClick={enter}>
-                Continue
+              <div className="field">
+                <label htmlFor="signin-password">Password</label>
+                <input
+                  id="signin-password"
+                  className="input"
+                  type="password"
+                  placeholder="Your password"
+                  autoComplete="current-password"
+                  value={signinForm.password}
+                  onChange={(event) =>
+                    setSigninForm({ ...signinForm, password: event.target.value })
+                  }
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter') void signIn()
+                  }}
+                />
+              </div>
+
+              {error && (
+                <div className="row gap-6" style={{ color: 'var(--danger)', fontSize: '0.8rem' }}>
+                  <Icon name="x" size={14} />
+                  {error}
+                </div>
+              )}
+
+              <button
+                type="button"
+                className="btn btn-primary btn-lg btn-block"
+                onClick={signIn}
+                disabled={busy}
+              >
+                {busy ? 'Signing in…' : 'Sign in'}
                 <Icon name="arrowRight" size={17} />
               </button>
+            </div>
+          )}
 
-              <p className="faint" style={{ fontSize: '0.72rem', marginTop: 14, lineHeight: 1.5 }}>
-                Tip: open a second tab and sign in as another student to see chat and session
-                requests sync live between them.
-              </p>
-            </>
-          ) : (
+          {mode === 'create' && (
             <div className="stack gap-14">
               <div className="field">
                 <label htmlFor="signup-name">Full name</label>
@@ -209,9 +254,24 @@ export function Auth() {
                 <input
                   id="signup-email"
                   className="input"
+                  type="email"
                   placeholder="priya@campus.edu"
+                  autoComplete="email"
                   value={form.email}
                   onChange={(event) => setForm({ ...form, email: event.target.value })}
+                />
+              </div>
+
+              <div className="field">
+                <label htmlFor="signup-password">Password</label>
+                <input
+                  id="signup-password"
+                  className="input"
+                  type="password"
+                  placeholder="At least 8 characters"
+                  autoComplete="new-password"
+                  value={form.password}
+                  onChange={(event) => setForm({ ...form, password: event.target.value })}
                 />
               </div>
 
@@ -262,8 +322,13 @@ export function Auth() {
                 </div>
               )}
 
-              <button type="button" className="btn btn-primary btn-lg btn-block" onClick={create}>
-                Create profile
+              <button
+                type="button"
+                className="btn btn-primary btn-lg btn-block"
+                onClick={create}
+                disabled={busy}
+              >
+                {busy ? 'Creating…' : 'Create profile'}
                 <Icon name="arrowRight" size={17} />
               </button>
             </div>

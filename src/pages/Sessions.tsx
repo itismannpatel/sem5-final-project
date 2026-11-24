@@ -39,13 +39,10 @@ export function Sessions() {
   return (
     <>
       <header className="page-head">
-        <div>
-          <h1 className="page-title">Sessions</h1>
-          <p>
-            Every exchange from request to review. Accept a proposed time and both sides get a
-            calendar file.
-          </p>
-        </div>
+        <p>
+          Every exchange from request to review. Accept a proposed time and both sides get a
+          calendar file.
+        </p>
         <div className="row gap-8">
           {pendingToMe > 0 && (
             <span className="chip chip-ember chip-lg">
@@ -72,11 +69,7 @@ export function Sessions() {
               {entry.label}
               {entry.count > 0 && (
                 <span
-                  className="badge-count"
-                  style={{
-                    background: tab === entry.id ? 'var(--ember)' : 'rgba(255,255,255,0.12)',
-                    color: tab === entry.id ? '#1a0c05' : 'var(--text-2)',
-                  }}
+                  className={`badge-count${tab === entry.id ? '' : ' badge-ghost'}`}
                 >
                   {entry.count}
                 </span>

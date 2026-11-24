@@ -4,6 +4,7 @@ import { CATEGORIES, SKILL_BY_ID } from '../data/catalog'
 import type { Category } from '../data/types'
 import { ratingFor } from '../data/api'
 import { scoreEveryone } from '../lib/matching'
+import { useServerMatches } from '../data/useMatches'
 import { PersonCard } from '../components/PersonCard'
 import { EmptyState } from '../components/EmptyState'
 import { Icon } from '../components/icons'
@@ -19,10 +20,12 @@ export function Discover() {
   const [sort, setSort] = useState<SortKey>('match')
   const [twoWayOnly, setTwoWayOnly] = useState(false)
 
-  const scored = useMemo(() => {
-    const results = scoreEveryone(me, db)
-    return new Map(results.map((match) => [match.user.id, match]))
-  }, [me, db])
+  const localScores = useMemo(() => scoreEveryone(me, db), [me, db])
+  const scores = useServerMatches(me.id, 'all', db.version) ?? localScores
+  const scored = useMemo(
+    () => new Map(scores.map((match) => [match.user.id, match])),
+    [scores],
+  )
 
   const people = useMemo(() => {
     const needle = query.trim().toLowerCase()
@@ -69,13 +72,10 @@ export function Discover() {
   return (
     <>
       <header className="page-head">
-        <div>
-          <h1 className="page-title">Discover</h1>
-          <p>
-            {db.users.length - 1} students trading {db.skills.length} skills. Search a subject, a
-            name, or just browse what your campus knows.
-          </p>
-        </div>
+        <p>
+          {db.users.length - 1} students trading {db.skills.length} skills. Search a subject, a
+          name, or just browse what your campus knows.
+        </p>
         <div className="row gap-8">
           <span className="chip chip-lg">
             <Icon name="users" size={14} />

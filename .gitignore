@@ -1,12 +1,24 @@
 # Dependencies
 node_modules/
 
+# Local toolchains (portable JDK/Node downloads — never commit)
+.tools/
+
 # Build output and caches
 dist/
 dist-ssr/
 .vite/
 coverage/
 tmp/
+scripts/__pycache__/
+__pycache__/
+
+# Local runtime database — created and seeded on first boot
+backend/twofold.db
+backend/twofold.db-wal
+backend/twofold.db-shm
+backend/twofold-data/
+backend/reminders-outbox.jsonl
 
 # Local environment files
 .env
@@ -18,12 +30,35 @@ tmp/
 *.log
 npm-debug.log*
 
-# OS files
+# OS / editor files
 .DS_Store
 Thumbs.db
+.vscode/
 
-# SQLite runtime database (keep schema.sql and seed.ts tracked)
-server/db/*.db
-server/db/*.db-wal
-server/db/*.db-shm
-server/db/*.db-journal
+# Agent working files (local only, not part of the project)
+agent.md
+instructions.md
+skill.md
+docs/archive/
+.freebuff/
+.cloud-attachments/
+
+# Internal planning drafts, presentation material and the assignment brief
+docs/cloud/
+docs/presentation/
+deck-assets/
+PPT_CONTENT.md
+scripts/build-deck.py
+Sem 5.pdf
+*.pptx
+TwoFold project PPT.png
+
+# Deployment scratch — never commit dumps, local Postgres data or raw captures
+backups/
+*.dump
+*.sql.gz
+pgdata/
+docs/monitoring/raw/
+
+# Runtime data store (backend/target/twofold-data/state.json) is ignored by
+# backend/.gitignore → target/
