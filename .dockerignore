@@ -1,0 +1,22 @@
+.git
+.github
+.tools
+.vscode
+node_modules
+dist
+backend/target
+backend/twofold.db
+backend/twofold.db-wal
+backend/twofold.db-shm
+backend/twofold-data
+backend/reminders-outbox.jsonl
+screenshots
+docs
+*.log
+*.pptx
+Sem 5.pdf
+agent.md
+instructions.md
+skill.md
+.cloud-attachments
+.freebuff

@@ -107,11 +107,11 @@ someone who can teach a specific skill *and* who wants something you can offer.
 - **Authentication is real and server-side** — BCrypt passwords, opaque server-side
   sessions, HttpOnly `SameSite=Lax` cookie. The 12 seeded students have no account and
   cannot sign in; the only way in is to register. No shared or demo password exists.
-- **Cloud deployment is decided, not finished.** Render Free (Docker) + Neon Free
-  Postgres + free object storage for backups + GitHub Actions; accounts exist and the
-  design is frozen in `docs/CLOUD.md`. **Never write "live at …" or paste uptime
-  screenshots you don't have.** Mark cloud-dependent numbers **provisional** and
-  re-freeze them after deployment.
+- **Deployment is temporary and ephemeral.** A Docker image for Render Free (SQLite on
+  the instance disk) is ready for a fast demo URL; accounts reset on every restart, so
+  never promise persistence. Neon Postgres + backups is the deferred Phase 2 design in
+  `docs/CLOUD.md`. **Never write "live at …" or paste uptime screenshots you don't
+  have.** Mark cloud-dependent numbers **provisional** and re-freeze them after deploy.
 - **Payments are sandbox only.** No gateway account, no real money, no card data
   stored. The ledger stores a masked token (`****4242`). Say this explicitly — the
   brief requires test mode, and claiming real payments would be a lie.
@@ -125,7 +125,8 @@ database locally, managed Neon Postgres planned for cloud · sandbox payment gat
 behind an interface (`PaymentGateway`) · scheduled background reminder job. **Cloud
 design decided but not built** (`docs/CLOUD.md`): containerised with Docker, CI via
 GitHub Actions, free-tier Render (Singapore) + Neon Postgres + object storage for
-backups, HTTPS by default, ₹0/month at prototype scale. Do not describe hosting in the
+backups, HTTPS by default, ₹0/month at prototype scale. Phase 1 is Docker on Render with
+SQLite on ephemeral disk; Phase 2 (Neon) is deferred. Do not describe hosting in the
 present tense until the live URL exists.
 
 ### Team (verify names/roles against the README before publishing)

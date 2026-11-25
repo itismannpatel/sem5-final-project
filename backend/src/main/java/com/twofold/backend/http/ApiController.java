@@ -622,7 +622,8 @@ public class ApiController {
           .orElseThrow(() -> ApiException.badRequest("registration failed"));
       auth.createAccount(student.id(), password);
       AuthSession session = auth.issue(student.id());
-      return respond(authPayload(student, created), 201, sessionCookie(session.token()));
+      return respond(authPayload(student, created), 201,
+          sessionCookie(session.token(), request.isSecure()));
     }
 
     if (method.equals("POST") && path.equals("/api/auth/login")) {
@@ -638,7 +639,8 @@ public class ApiController {
       if (student == null) {
         throw ApiException.unauthorized("invalid email or password");
       }
-      return respond(authPayload(student, db), 200, sessionCookie(session.token()));
+      return respond(authPayload(student, db), 200,
+          sessionCookie(session.token(), request.isSecure()));
     }
 
     if (method.equals("POST") && path.equals("/api/auth/logout")) {
@@ -692,9 +694,10 @@ public class ApiController {
    * cross-site POSTs. See {@link AuthService} for why a cookie over a bearer
    * token, and why no CSRF token is needed here.
    */
-  private static String sessionCookie(String token) {
+  private static String sessionCookie(String token, boolean secure) {
     return ResponseCookie.from(AuthService.COOKIE_NAME, token)
         .httpOnly(true)
+        .secure(secure)
         .sameSite("Lax")
         .path("/")
         .maxAge(AuthService.SESSION_TTL)

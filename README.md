@@ -240,25 +240,28 @@ and Outlook calendars, no OAuth, works offline.
 
 ---
 
-## Cloud deployment (decided, not yet built)
+## Deployment (Render Free, temporary)
 
-On **2026-11-25** the team chose the cloud shape: one **Render Free** Docker web service
-(serving the React build from the same jar) + **Neon Free Postgres** for durable data +
-free S3-compatible object storage for nightly database backups, with **GitHub Actions**
-as the CI/CD pipeline. Render and Neon accounts are already set up; **no deployment exists
-yet** and the app still runs on SQLite locally.
+The first cloud target is deliberately small: one **Render Free** Docker web service in
+Singapore, serving the React build and the API from the same jar, with **SQLite on the
+service's ephemeral disk**. A `Dockerfile` and `render.yaml` are in the repo; the build
+runs `npm run build`, copies the bundle into `backend/src/main/resources/static`, then
+packages the Spring Boot jar.
 
-| Piece | Choice | Free-tier limits that matter |
+| Piece | Choice | What to expect |
 |---|---|---|
-| Compute | Render Free web service, Docker, Singapore | 0.1 CPU / 512 MB, 750 instance-hours/mo, 5 GB bandwidth; sleeps after 15 min (~1 min wake) |
-| Database | Neon Free Postgres | 1 GB storage, 100 CU-hours/mo; never paused for inactivity |
-| Object storage | To be chosen (10 GB free bucket) | used only for backups, not runtime traffic |
-| CI/CD | GitHub Actions on the public repo | free on public repositories |
+| Compute | Render Free web service, Docker, Singapore | 0.1 CPU / 512 MB; sleeps after 15 min (~1 min wake) |
+| Database | SQLite in `/app/data`, ephemeral | seeded on first boot; **wiped on every deploy or restart** |
+| CI/CD | Render auto-deploy from `main` | no separate pipeline yet |
 
-Still to build before a URL exists: `PostgresStore`, the Dockerfile, packaging the Vite
-bundle into the jar, SPA deep-link fallback, `PORT` binding, a `Secure` cookie, the CI
-workflow and the backup job. The full design, risks and provisional cost table live in
-[`docs/CLOUD.md`](docs/CLOUD.md). Nothing in this section is currently deployed.
+This is a **temporary demo deployment**, not durable hosting: registered accounts do not
+survive a restart. The Neon Postgres + object-storage backup design in
+[`docs/CLOUD.md`](docs/CLOUD.md) is deferred to a later phase.
+
+**Deploy:** in Render choose **New → Blueprint** and point it at this repo
+(`render.yaml`), or **New → Web Service → Docker** with health check
+`/actuator/health`. No environment variables or database setup are needed. Local
+development is unchanged (`npm run dev`, SQLite in `backend/twofold.db`).
 
 ---
 

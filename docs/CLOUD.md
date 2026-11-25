@@ -1,6 +1,11 @@
 # Cloud deployment — decided design
 
-> **STATUS: DECIDED 2026-11-25 · NOT YET BUILT · NOT YET DEPLOYED.**
+> **CURRENT PHASE (2026-11-25): Render Free + Docker + SQLite on the ephemeral disk.**
+> `Dockerfile`, `.dockerignore` and `render.yaml` are in the repo; the jar serves the
+> React build and the API from one container. This is the **temporary demo target**:
+> accounts and sessions reset on every deploy or restart. Neon Postgres + object-storage
+> backups below is **Phase 2**, deferred, and still the durable design.
+>
 > The team chose **Option C**: one Render Free Docker service + Neon Free Postgres +
 > object storage for backups + GitHub Actions. Render and Neon accounts already exist.
 > This document is the repo-facing cloud architecture; `docs/cloud/` holds the internal
